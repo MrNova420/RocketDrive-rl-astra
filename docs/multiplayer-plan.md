@@ -39,21 +39,21 @@ The remainder of this document is a proposed design for this repository. Its rat
 
 | Area | Existing behavior | Required change |
 | --- | --- | --- |
-| Fixed timestep | [config.ts](/home/amwill/Applications/rl-astra/src/config.ts:7) defines 1/120; Rapier uses it. | Retain one fixed simulation step on both sides. Never substitute render delta or packet intervals. |
-| Headless physics | [physics.ts](/home/amwill/Applications/rl-astra/src/physics.ts:30) runs in Node through the existing Vite SSR test approach. | Bundle the same simulation for Node and Chrome; Three's math types do not require a renderer. |
-| Match lifecycle | [game.ts](/home/amwill/Applications/rl-astra/src/game.ts:144) mixes ticking, scoring, UI, audio, and bots. | Extract match rules, phase timers, goals, and reset scheduling into shared simulation state. |
-| Rendering feeds physics | [game.ts](/home/amwill/Applications/rl-astra/src/game.ts:169) gets the goal blast origin from the explosion object's position. | Store the origin in simulation state. Effects consume it. |
-| Hidden gameplay state | [physics.ts](/home/amwill/Applications/rl-astra/src/physics.ts:21) stores jump, flip, boost, recovery, contact and demolition state outside Rapier. | Include it in save/restore and authoritative updates as appropriate. |
-| Two-car assumptions | [physics.ts](/home/amwill/Applications/rl-astra/src/physics.ts:415) explicitly updates `player` then `bot`. Pickup and collision rules use identity checks. | Use two stable slots in canonical order, independent of which browser controls which car. |
-| Input edges | [controls.ts](/home/amwill/Applications/rl-astra/src/controls.ts:127) consumes a queued jump; [game.ts](/home/amwill/Applications/rl-astra/src/game.ts:202) clears it after the first substep. | Record immutable per-tick commands. Retransmission and replay must not create additional jump presses. |
-| Existing smoothing | [render.ts](/home/amwill/Applications/rl-astra/src/render.ts:239) interpolates adjacent local physics poses. | Keep this, and add a separate bounded correction offset for networking. |
-| Local pause/reset | [game.ts](/home/amwill/Applications/rl-astra/src/game.ts:76) pauses on tab hiding; local actions reset the car and match. | Menus affect local controls only in online play. Server owns resets, match progression, and rules. |
+| Fixed timestep | [config.ts](../src/config.ts#L7) defines 1/120; Rapier uses it. | Retain one fixed simulation step on both sides. Never substitute render delta or packet intervals. |
+| Headless physics | [physics.ts](../src/physics.ts#L30) runs in Node through the existing Vite SSR test approach. | Bundle the same simulation for Node and Chrome; Three's math types do not require a renderer. |
+| Match lifecycle | [game.ts](../src/game.ts#L144) mixes ticking, scoring, UI, audio, and bots. | Extract match rules, phase timers, goals, and reset scheduling into shared simulation state. |
+| Rendering feeds physics | [game.ts](../src/game.ts#L169) gets the goal blast origin from the explosion object's position. | Store the origin in simulation state. Effects consume it. |
+| Hidden gameplay state | [physics.ts](../src/physics.ts#L21) stores jump, flip, boost, recovery, contact and demolition state outside Rapier. | Include it in save/restore and authoritative updates as appropriate. |
+| Two-car assumptions | [physics.ts](../src/physics.ts#L415) explicitly updates `player` then `bot`. Pickup and collision rules use identity checks. | Use two stable slots in canonical order, independent of which browser controls which car. |
+| Input edges | [controls.ts](../src/controls.ts#L127) consumes a queued jump; [game.ts](../src/game.ts#L202) clears it after the first substep. | Record immutable per-tick commands. Retransmission and replay must not create additional jump presses. |
+| Existing smoothing | [render.ts](../src/render.ts#L239) interpolates adjacent local physics poses. | Keep this, and add a separate bounded correction offset for networking. |
+| Local pause/reset | [game.ts](../src/game.ts#L76) pauses on tab hiding; local actions reset the car and match. | Menus affect local controls only in online play. Server owns resets, match progression, and rules. |
 
 Run offline practice through the extracted simulation too, so online and offline handling cannot quietly diverge. The bot becomes another input producer, disabled in a human 1v1.
 
 ## Measurements and limits
 
-The [reproducible probe](/home/amwill/Applications/rl-astra/docs/research/multiplayer-feasibility.mjs) uses real game physics in Node. Its [recorded output](/home/amwill/Applications/rl-astra/docs/research/multiplayer-feasibility.json) came from Linux x64, Ryzen 9 9950X, Node 26.7.0, and Rapier 0.19.3. Run it with:
+The [reproducible probe](research/multiplayer-feasibility.mjs) uses real game physics in Node. Its [recorded output](research/multiplayer-feasibility.json) came from Linux x64, Ryzen 9 9950X, Node 26.7.0, and Rapier 0.19.3. Run it with:
 
 ```sh
 node docs/research/multiplayer-feasibility.mjs
